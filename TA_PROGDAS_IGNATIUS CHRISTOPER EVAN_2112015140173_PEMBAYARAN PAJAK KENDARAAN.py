@@ -18,12 +18,12 @@ class KendaraanDasar:
         self.jenis = jenis
 
 
-# [MODUL 5 - INHERITANCE - Subclass]
+# [MODUL 5 - SUBCLASS - INHERITANCE]
 class Kendaraan(KendaraanDasar):
-    """Kelas Kendaraan yang mewarisi KendaraanDasar dan menambahkan atribut pajak."""
-    def __init__(self, nomor_polisi, jenis, bbnkb, pajak_pokok, opsen_pokok, swdkllj, bulan_terlambat):
+    def __init__(self, nomor_polisi, jenis, bbnkb,
+                 pajak_pokok, opsen_pokok,
+                 swdkllj, bulan_terlambat):
         super().__init__(nomor_polisi, jenis)
-        # Simpan nilai moneter sebagai float untuk akurasi
         self.bbnkb = float(bbnkb)
         self.pajak_pokok = float(pajak_pokok)
         self.opsen_pokok = float(opsen_pokok)
@@ -31,16 +31,16 @@ class Kendaraan(KendaraanDasar):
         self.bulan_terlambat = int(bulan_terlambat)
 
 
-# [MODUL 4 - METHOD dengan RETURN]
+# ================= LOGIC SERVICE ==================
+# [MODUL 4 - METHOD & RETURN]
 class PajakService:
     def __init__(self, kendaraan: Kendaraan):
         self.kendaraan = kendaraan
 
-    def hitung_denda(self) -> float:
-        # Denda 2% per bulan terlambat dari pajak pokok
+    def hitung_denda(self):
         return 0.02 * self.kendaraan.pajak_pokok * max(0, self.kendaraan.bulan_terlambat)
 
-    def hitung_total(self) -> float:
+    def hitung_total(self):
         return (
             self.kendaraan.bbnkb +
             self.kendaraan.pajak_pokok +
@@ -50,24 +50,23 @@ class PajakService:
         )
 
 
-# [MODUL 4 - METHOD & RETURN]
+# [MODUL 4 - METHOD]
+# [MODUL 2 - IF]
 class Pembayaran:
-    def __init__(self, total: float):
+    def __init__(self, total):
         self.total = float(total)
 
-    def proses(self, uang: float):
-        uang = float(uang)
-        # [MODUL 2 - PENGKONDISIAN IF]
+    def proses(self, uang):
         if uang < self.total:
             return None
         return uang - self.total
 
 
-# ================= GUI APP =====================
-# [MODUL 8 - GUI - Tkinter]
-# [MODUL 4 - METHOD dalam class]
+# ================= GUI APPLICATION ==================
+# [MODUL 8 - GUI TKINTER]
 class PajakGUI:
 
+    # [MODUL 4 - METHOD CLASS]
     def __init__(self, root):
         self.root = root
         root.title("Sistem Pembayaran Pajak Kendaraan")
@@ -75,38 +74,28 @@ class PajakGUI:
         root.configure(bg="#1E1E2E")
 
         self.setup_style()
-        # DB connection
+
+        # [MODUL 1 - VARIABEL]
         self.conn = sqlite3.connect("pajak.db")
         self.create_table()
 
-        # build UI
         self.build_layout()
 
-    # =================== STYLE ===================
+        # ✅ AUTO LOAD DATA RIWAYAT SAAT APLIKASI DIBUKA
+        self.tampilkan_riwayat()
+
+    # ================= STYLE ===================
     def setup_style(self):
-        # Menggunakan ttkthemes untuk tema gelap modern (jika tersedia)
         try:
             style = ttkthemes.ThemedStyle(self.root)
             style.set_theme("equilux")
-            style.configure("TLabel", font=("Segoe UI", 10), foreground="white")
             style.configure("Title.TLabel",
                             font=("Segoe UI", 20, "bold"),
                             foreground="#00D4AA")
-            style.configure("TButton",
-                            font=("Segoe UI", 10, "bold"),
-                            padding=8,
-                            background="#00D4AA")
-            style.configure("Card.TLabelframe",
-                            background="#2A2D3A",
-                            relief="flat")
-            style.configure("Card.TLabelframe.Label",
-                            font=("Segoe UI", 11, "bold"),
-                            foreground="white")
-        except Exception:
-            # Jika ttkthemes tidak tersedia, tetap pakai ttk default
+        except:
             pass
 
-    # ============== CREATE TABLE ==================
+    # ================= DATABASE =================
     def create_table(self):
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS pembayaran(
@@ -121,145 +110,102 @@ class PajakGUI:
         """)
         self.conn.commit()
 
-    # ================= MAIN LAYOUT ================
+    # ================= LAYOUT ==================
+    # [MODUL 8]
     def build_layout(self):
-        header_frame = tk.Frame(self.root, bg="#1E1E2E")
-        header_frame.pack(pady=10)
-
-        # Logo kecil (jika ada)
-        try:
-            self.logo_img = ImageTk.PhotoImage(Image.open("logo.png").resize((50, 50)))
-            logo_label = tk.Label(header_frame, image=self.logo_img, bg="#1E1E2E")
-            logo_label.pack(side="left", padx=10)
-        except Exception:
-            pass
-
         header = ttk.Label(
-            header_frame,
+            self.root,
             text="💳 SISTEM PEMBAYARAN PAJAK KENDARAAN",
             style="Title.TLabel"
         )
-        header.pack(side="left")
+        header.pack(pady=15)
 
         container = tk.Frame(self.root, bg="#1E1E2E")
         container.pack(fill="both", expand=True)
-        container.grid_rowconfigure(0, weight=1)
+
         container.grid_columnconfigure(0, weight=1)
         container.grid_columnconfigure(1, weight=2)
 
         self.build_form(container)
         self.build_output(container)
 
+
     # ================= FORM =====================
-    # [MODUL 8 - GUI - FORM INPUT]
-    # [MODUL 1 - Variabel & tipe data digunakan pada entries]
+    # [MODUL 1 - VARIABEL]
+    # [MODUL 3 - LOOP]
     def build_form(self, parent):
-        form = ttk.Labelframe(
-            parent,
-            text=" Input Kendaraan ",
-            style="Card.TLabelframe",
-            padding=15
-        )
+        form = ttk.Labelframe(parent, text="INPUT KENDARAAN", padding=15)
         form.grid(row=0, column=0, sticky="nsew", padx=15, pady=15)
 
         self.entries = {}
-
         fields = [
-            ("Nomor Polisi", "nomor"),
-            ("Jenis Kendaraan", "jenis"),
-            ("BBNKB", "bbnkb"),
-            ("Pajak Pokok", "pajak"),
-            ("Opsen Pokok", "opsen"),
-            ("SWDKLLJ", "swdkllj"),
-            ("Bulan Terlambat", "bulan"),
-            ("Uang Bayar", "uang")
+            ("Nomor Polisi","nomor"),
+            ("Jenis Kendaraan","jenis"),
+            ("BBNKB","bbnkb"),
+            ("Pajak Pokok","pajak"),
+            ("Opsen Pokok","opsen"),
+            ("SWDKLLJ","swdkllj"),
+            ("Bulan Terlambat","bulan"),
+            ("Uang Bayar","uang")
         ]
 
-        # [MODUL 3 - PERULANGAN FOR]
-        for i, (label, key) in enumerate(fields):
-            ttk.Label(form, text=label).grid(row=i, column=0, sticky="w", pady=5)
-            entry = ttk.Entry(form, width=28)
-            entry.grid(row=i, column=1, pady=5, padx=8)
+        for i,(label,key) in enumerate(fields):
+            ttk.Label(form,text=label).grid(row=i,column=0,sticky="w",pady=6)
+            entry = ttk.Entry(form)
+            entry.grid(row=i,column=1,padx=6,pady=6)
             self.entries[key] = entry
 
-        btn_frame = tk.Frame(form, bg="#2A2D3A")
-        btn_frame.grid(row=len(fields), columnspan=2, pady=15)
+        ttk.Button(form,
+                   text="✅ PROSES",
+                   command=self.proses_pembayaran).grid(columnspan=2,pady=12)
 
-        # Progress bar untuk feedback saat proses
-        self.progress = ttk.Progressbar(btn_frame, mode="indeterminate")
-        self.progress.pack(fill="x", pady=5)
-        self.progress.pack_forget()  # sembunyikan sampai dipakai
+        ttk.Button(form,
+                   text="📤 EXPORT PDF",
+                   command=self.konfirmasi_export).grid(columnspan=2,sticky="ew")
 
-        ttk.Button(btn_frame, text="✅ PROSES", width=20,
-                   command=self.proses_pembayaran).pack(pady=5)
+        ttk.Button(form,
+                   text="📊 STATISTIK",
+                   command=self.tampilkan_statistik).grid(columnspan=2,sticky="ew",pady=5)
 
-        ttk.Button(btn_frame, text="🗃️ RIWAYAT",
-                   command=self.tampilkan_riwayat).pack(fill="x", pady=3)
-
-        ttk.Button(btn_frame, text="📤 EXPORT PDF",
-                   command=self.konfirmasi_export).pack(fill="x", pady=3)
-
-        ttk.Button(btn_frame, text="📊 STATISTIK",
-                   command=self.tampilkan_statistik).pack(fill="x", pady=3)
 
     # ================= OUTPUT ===================
     def build_output(self, parent):
-        out = ttk.Labelframe(
-            parent,
-            text=" Output & Riwayat ",
-            style="Card.TLabelframe",
-            padding=15
-        )
-        out.grid(row=0, column=1, sticky="nsew", padx=15, pady=15)
+        out = ttk.Labelframe(parent, text="OUTPUT & RIWAYAT", padding=15)
+        out.grid(row=0,column=1,sticky="nsew",padx=15,pady=15)
 
         self.tabs = ttk.Notebook(out)
-        self.tabs.pack(fill="both", expand=True)
+        self.tabs.pack(fill="both",expand=True)
 
-        # ---------- TAB STRUK ----------
+        # ---- TAB STRUK ----
         self.text_area = tk.Text(
             self.tabs,
-            font=("Consolas", 11),
             bg="#020617",
-            fg="#F8FAFC",
-            wrap="word"
+            fg="white",
+            font=("Consolas",11)
         )
         self.tabs.add(self.text_area, text="🧾 STRUK")
 
-        # ---------- TAB RIWAYAT ----------
-        tree_frame = tk.Frame(self.tabs, bg="#2A2D3A")
+        # ---- TAB RIWAYAT ----
         self.tree = ttk.Treeview(
-            tree_frame,
-            columns=("tanggal", "nomor", "jenis", "total"),
+            self.tabs,
+            columns=("tanggal","nomor","jenis","total"),
             show="headings"
         )
 
         self.tree.heading("tanggal", text="Tanggal")
         self.tree.heading("nomor", text="Nomor Polisi")
         self.tree.heading("jenis", text="Jenis")
-        self.tree.heading("total", text="Total Bayar")
+        self.tree.heading("total", text="Total")
 
-        self.tree.column("tanggal", width=170)
-        self.tree.column("nomor", width=140)
-        self.tree.column("jenis", width=150)
-        self.tree.column("total", width=120)
+        self.tabs.add(self.tree, text="📑 RIWAYAT")
 
-        # Scrollbar untuk treeview
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-        self.tree.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
 
-        self.tabs.add(tree_frame, text="📑 RIWAYAT")
-
-    # ================= PROCESS ==================
+    # ================= PROSES ==================
+    # [MODUL 2 - IF]
     def proses_pembayaran(self):
         try:
-            nomor = self.entries["nomor"].get().strip()
-            jenis = self.entries["jenis"].get().strip()
-
-            # Validasi minimal
-            if not nomor or not jenis:
-                raise ValueError("Nomor polisi atau jenis kosong")
+            nomor = self.entries["nomor"].get()
+            jenis = self.entries["jenis"].get()
 
             bbnkb = float(self.entries["bbnkb"].get())
             pajak = float(self.entries["pajak"].get())
@@ -267,141 +213,136 @@ class PajakGUI:
             swdkllj = float(self.entries["swdkllj"].get())
             bulan = int(self.entries["bulan"].get())
             uang = float(self.entries["uang"].get())
-
-            kendaraan = Kendaraan(nomor, jenis, bbnkb, pajak, opsen, swdkllj, bulan)
-
-        except ValueError:
-            messagebox.showerror("ERROR", "Input belum lengkap atau bukan angka.")
+        except:
+            messagebox.showerror("ERROR", "Input tidak valid.")
             return
 
-        # Mulai progress bar
-        self.progress.pack(fill="x", pady=5)
-        self.progress.start()
+        kendaraan = Kendaraan(nomor,jenis,bbnkb,pajak,opsen,swdkllj,bulan)
 
-        # Simulasi proses (gunakan after untuk delay agar terlihat)
-        self.root.after(1200, lambda: self.finalize_proses(kendaraan, uang))
-
-    def finalize_proses(self, kendaraan, uang):
-        self.progress.stop()
-        self.progress.pack_forget()  # Sembunyikan progress bar
-
-        pajak = PajakService(kendaraan)
-        total = pajak.hitung_total()
-        denda = pajak.hitung_denda()
+        pajakService = PajakService(kendaraan)
+        total = pajakService.hitung_total()
+        denda = pajakService.hitung_denda()
 
         bayar = Pembayaran(total)
         kembalian = bayar.proses(uang)
 
         if kembalian is None:
-            messagebox.showerror("ERROR", f"Uang tidak cukup. Total yang harus dibayar: {int(total)}")
+            messagebox.showerror("ERROR","Uang tidak cukup.")
             return
 
-        try:
-            self.conn.execute(
-                """INSERT INTO pembayaran
-                (nomor_polisi,jenis,total,denda,kembalian)
-                VALUES (?,?,?,?,?)""",
-                (kendaraan.nomor_polisi, kendaraan.jenis, total, denda, kembalian)
-            )
-            self.conn.commit()
-        except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Gagal simpan data: {e}")
-            return
+        self.conn.execute("""
+            INSERT INTO pembayaran
+            (nomor_polisi,jenis,total,denda,kembalian)
+            VALUES (?,?,?,?,?)
+        """,(nomor,jenis,total,denda,kembalian))
 
-        # SIMPAN SESSION
-        self.last = (kendaraan, total, denda, kembalian)
+        self.conn.commit()
 
-        # CETAK STRUK
+        self.last=(kendaraan,total,denda,kembalian)
+
         now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        self.text_area.delete(1.0, tk.END)
+
+        self.text_area.delete(1.0,tk.END)
         self.text_area.insert(
             tk.END,
 f"""
-========== STRUK PAJAK ==========
-Tanggal      : {now}
-Nomor Polisi : {kendaraan.nomor_polisi}
-Jenis        : {kendaraan.jenis}
+=========== STRUK ============
+Tanggal   : {now}
+Nomor     : {nomor}
+Jenis     : {jenis}
 
-BBNKB        : {int(kendaraan.bbnkb)}
-Pajak Pokok  : {int(kendaraan.pajak_pokok)}
-Opsen Pokok  : {int(kendaraan.opsen_pokok)}
-SWDKLLJ      : {int(kendaraan.swdkllj)}
-Denda        : {int(denda)}
+BBNKB     : {int(bbnkb)}
+Pajak     : {int(pajak)}
+Opsen     : {int(opsen)}
+SWDKLLJ   : {int(swdkllj)}
+Denda     : {int(denda)}
 -----------------------------
-TOTAL        : {int(total)}
-KEMBALIAN    : {int(kembalian)}
-================================
+TOTAL     : {int(total)}
+KEMBALI   : {int(kembalian)}
+=============================
 """
         )
+
+        # ✅ PINDAH OTOMATIS KE TAB STRUK
+        self.tabs.select(0)
+
+        # ✅ AUTO REFRESH RIWAYAT
+        self.tampilkan_riwayat()
 
         for e in self.entries.values():
             e.delete(0, tk.END)
 
-    # ================= HISTORY ==================
+
+    # ================= RIWAYAT ==================
+    # [MODUL 3 - LOOP]
     def tampilkan_riwayat(self):
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        rows = self.conn.execute("""
+        data = self.conn.execute("""
             SELECT tanggal,nomor_polisi,jenis,total
-            FROM pembayaran
-            ORDER BY tanggal DESC
+            FROM pembayaran ORDER BY tanggal DESC
         """).fetchall()
 
-        for r in rows:
-            # r = (tanggal, nomor_polisi, jenis, total)
-            self.tree.insert("", "end", values=(r[0], r[1], r[2], int(r[3])))
+        for r in data:
+            self.tree.insert("", "end",
+                             values=(r[0], r[1], r[2], int(r[3])))
+
 
     # ================= EXPORT ===================
+    # [MODUL 4]
     def konfirmasi_export(self):
-        if not hasattr(self, "last"):
-            messagebox.showerror("ERROR", "Tidak ada struk.")
+        if not hasattr(self,"last"):
+            messagebox.showerror("ERROR","Belum ada struk.")
             return
-        if messagebox.askyesno("Konfirmasi", "Apakah Anda yakin ingin export struk ke PDF?"):
+
+        if messagebox.askyesno("Konfirmasi","Export struk ke PDF?"):
             self.export_pdf()
 
     def export_pdf(self):
-        kendaraan, total, denda, kembalian = self.last
+        kendaraan,total,denda,kembalian = self.last
 
         file = filedialog.asksaveasfilename(
             defaultextension=".pdf",
-            filetypes=[("PDF","*.pdf")],
             initialfile=f"struk_{kendaraan.nomor_polisi}.pdf"
         )
 
-        if not file: return
+        if not file:
+            return
 
-        c = canvas.Canvas(file, pagesize=letter)
-        y=750
-        lines=[
+        c = canvas.Canvas(file,pagesize=letter)
+        y = 750
+
+        data=[
             "===== STRUK PAJAK =====",
-            f"Nomor Polisi : {kendaraan.nomor_polisi}",
-            f"Jenis        : {kendaraan.jenis}",
+            f"Nomor Polisi: {kendaraan.nomor_polisi}",
+            f"Jenis: {kendaraan.jenis}",
             "",
-            f"BBNKB        : {int(kendaraan.bbnkb)}",
-            f"Pajak Pokok  : {int(kendaraan.pajak_pokok)}",
-            f"Opsen Pokok  : {int(kendaraan.opsen_pokok)}",
-            f"SWDKLLJ      : {int(kendaraan.swdkllj)}",
-            f"Denda        : {int(denda)}",
+            f"BBNKB   : {int(kendaraan.bbnkb)}",
+            f"Pajak   : {int(kendaraan.pajak_pokok)}",
+            f"Opsen   : {int(kendaraan.opsen_pokok)}",
+            f"SWDKLLJ : {int(kendaraan.swdkllj)}",
+            f"Denda   : {int(denda)}",
             "",
-            f"TOTAL        : {int(total)}",
-            f"Kembalian    : {int(kembalian)}"
+            f"TOTAL   : {int(total)}",
+            f"KEMBALI : {int(kembalian)}"
         ]
 
-        for l in lines:
-            c.drawString(100,y,l)
-            y-=20
+        for line in data:
+            c.drawString(100,y,line)
+            y -= 18
 
         c.save()
         messagebox.showinfo("SUKSES","PDF berhasil dibuat!")
 
-    # ================= STAT =====================
+
+    # ================= STATISTIK =================
+    # [MODUL 2 - IF]
     def tampilkan_statistik(self):
         data = self.conn.execute(
             "SELECT jenis FROM pembayaran"
         ).fetchall()
 
-        # [MODUL 2 - IF CEK DATA]
         if not data:
             messagebox.showerror("ERROR","Belum ada data.")
             return
@@ -409,17 +350,17 @@ KEMBALIAN    : {int(kembalian)}
         stat = Counter([x[0] for x in data])
 
         plt.figure()
-        plt.bar(list(stat.keys()), list(stat.values()))
-        plt.title("Statistik Kendaraan")
+        plt.bar(list(stat.keys()),list(stat.values()))
+        plt.title("STATISTIK JENIS KENDARAAN")
         plt.xlabel("Jenis")
-        plt.ylabel("Jumlah Transaksi")
+        plt.ylabel("Jumlah")
         plt.tight_layout()
         plt.show()
 
 
-# ================= RUN =========================
+# ================= RUN PROGRAM =================
+# [MODUL 8 - MAIN WINDOW]
 if __name__ == "__main__":
-    # [GUI - MAIN WINDOW]
     root = tk.Tk()
     app = PajakGUI(root)
     root.mainloop()
